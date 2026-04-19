@@ -1,0 +1,5 @@
+*.env
+myenv
+*.json
+__pycache__
+*.cpython-312.pyc
