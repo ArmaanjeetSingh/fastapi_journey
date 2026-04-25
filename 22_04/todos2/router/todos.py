@@ -5,6 +5,7 @@ from sqlalchemy.orm import session
 from pydantic import BaseModel, Field
 from router import auth
 from .auth import get_current_user
+from models import Todos
 
 router = APIRouter()
 
@@ -23,14 +24,14 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 
 class TodoRequest(BaseModel):
     title : str = Field(min_length=2)
-    description : str = Field(min_length=3, max_lenght= 50)
+    description : str = Field(min_length=3, max_length= 50)
     priority : int = Field(gt = 0, lt = 6)
     complete : bool
 
 
-@router.get("/")
+@router.get("/",status_code = status.HTTP_200_OK)
 async def read_all(user : user_dependency,db: db_dependency):
-    return db.query(Todos).filter(Todos.owner_id == user.get('id'))
+    return db.query(Todos).filter(Todos.owner_id == user.get('id')).all()
 
 
 @router.get("/todo/{todo_id}",status_code=status.HTTP_200_OK)
