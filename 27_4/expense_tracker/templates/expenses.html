@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+<div class="container">
+    <div class="card text-center">
+        <div class="card-header">
+            Your expenses
+        </div>
+    </div>
+    <div class="card-body">
+        <h5 class=" card-title">List of your expenses</h5>
+        <table class="table table-hovered">
+            <thead>
+                <tr>
+                    <th scope = col>#</th>
+                    <th scope = col>Info</th>
+                    <th scope = col>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr class="pointer">
+                    <td>{{loop.index}}</td>
+                    <td>{{expense.amount}}</td>
+                    <td>{{expense.type}}</td>
+                    <td>
+                        <button onclick = "window.location.href = 'edit-expenses/{{expense.id}}'" type = 'button' class = 'btn btn-info'>
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="/expenses/add-expenses" class = 'btn btn-primary'>Add Expense</a>
+    </div>
+</div>
+{% endblock content %}

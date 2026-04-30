@@ -10,6 +10,8 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
 from datetime import datetime
 from datetime import timedelta,timezone 
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
 
 
 class CreateUserRequest(BaseModel):
@@ -44,9 +46,21 @@ def get_db():
 
 db_dependency = Annotated[Session,Depends(get_db)]
 
+templates = Jinja2Templates(directory = 'templates')
 
+## PAGES
 
-def get_authenticate_user(username : str, password : str, db : db_dependency):
+@router.get("/login-page")
+def render_login_page(request : Request):
+    return templates.TemplateResponse(name = "login.html", request = request, context = {})
+
+@router.get("/register-page")
+def render_login_page(request : Request):
+    return templates.TemplateResponse(name = "register.html", request = request, context = {})
+
+##ENDPOINTS
+
+async def get_authenticate_user(username : str, password : str, db : db_dependency):
     user_model = db.query(Users).filter(Users.username == username).first()
     if user_model is None:
         return False
@@ -62,7 +76,7 @@ def create_access_token(username : str, role : str, id: int, expires_delta : tim
     return jwt.encode(encode, SECRET_KEY, algorithm = ALGORITHM)
     
 
-def get_current_user(token : Annotated[str, Depends(oauth2_bearer)]):
+async def get_current_user(token : Annotated[str, Depends(oauth2_bearer)]):
     try :
         payload = jwt.decode(token,SECRET_KEY,algorithms = [ALGORITHM])
         username : str = payload.get("sub")
@@ -76,7 +90,7 @@ def get_current_user(token : Annotated[str, Depends(oauth2_bearer)]):
 
 
 
-@router.post("/auth",status_code = status.HTTP_201_CREATED)
+@router.post("/",status_code = status.HTTP_201_CREATED)
 async def create_user(create_user_request : CreateUserRequest, db : db_dependency):
     create_user_model = Users(
         email = create_user_request.email,
@@ -85,7 +99,8 @@ async def create_user(create_user_request : CreateUserRequest, db : db_dependenc
         last_name = create_user_request.last_name,
         hashed_password = bcrypt_context.hash(create_user_request.password),
         role = create_user_request.role,
-        is_active = True
+        is_active = True,
+        phone_number = create_user_request.phone_number,
     )
     # return create_user_model
     db.add(create_user_model)
@@ -95,7 +110,7 @@ async def create_user(create_user_request : CreateUserRequest, db : db_dependenc
 
 @router.post("/token",response_model = Token)
 async def login_for_access_token(form_data : Annotated[OAuth2PasswordRequestForm,Depends()],db : db_dependency):
-    user = get_authenticate_user(form_data.username,form_data.password,db)
+    user = await get_authenticate_user(form_data.username,form_data.password,db)
     if not user:
         raise HTTPException(status_code=401, detail = 'not authorized user')
     token = create_access_token(user.username, user.role, user.id, timedelta(minutes = 20))
